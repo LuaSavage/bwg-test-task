@@ -1,6 +1,5 @@
 # Black Wall Group Test Task
 ![test workflow](https://github.com/LuaSavage/bwg-test-task/actions/workflows/go.yml/badge.svg)
-[![Go Report Card](https://goreportcard.com/badge/github.com/LuaSavage/bwg-test-task)](https://goreportcard.com/report/github.com/LuaSavage/bwg-test-task)
 
 ## Description
 

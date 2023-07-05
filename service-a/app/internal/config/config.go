@@ -16,7 +16,7 @@ type Config struct {
 	Kafka struct {
 		Host  string `yaml:"host" env:"KAFKA_HOST" env-default:"localhost"`
 		Port  string `yaml:"port" env:"KAFKA_PORT" env-default:"9092"`
-		Topic string `yaml:"password" env:"KAFKA_TOPIC" env-required:"true"`
+		Topic string `yaml:"topic" env:"KAFKA_TOPIC" env-required:"true" env-default:"transfer"`
 	} `yaml:"kafka"`
 }
 
