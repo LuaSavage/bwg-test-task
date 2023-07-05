@@ -12,6 +12,8 @@ import (
 	"github.com/LuaSavage/bwg-test-task/service-b/pkg/logging"
 
 	"github.com/LuaSavage/bwg-test-task/service-b/pkg/client/msgbroker"
+
+	consumer "github.com/LuaSavage/bwg-test-task/service-b/internal/domain/adapter/msgbroker"
 )
 
 func main() {
@@ -21,7 +23,7 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	ctx := context.Background()
+	ctx := context.TODO()
 	// trying 5 times to establish connection
 	pgxpool, err := postgresql.NewClient(ctx /*max retry attempts*/, 5, cfg.Storage)
 
@@ -45,8 +47,6 @@ func main() {
 		logger.Error(err)
 	}()
 
-	for {
-		resp := kafkaConsumer.ConsumeMessage()
-	}
-
+	consumerSerivce, err := consumer.NewConsumerService(kafkaConsumer, accountService, logger)
+	consumerSerivce.Subscribe(ctx)
 }
