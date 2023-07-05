@@ -41,6 +41,10 @@ func (s *Service) GetBalance(ctx context.Context, accountId uuid.UUID) (float64,
 }
 
 func (s *Service) Transfer(ctx context.Context, requestDTO *dto.TransferRequestDTO) error {
+	if requestDTO.Amount <= 0 {
+		return fmt.Errorf("funds amount must be positive")
+	}
+
 	balance, err := s.GetBalance(ctx, requestDTO.AccountID)
 	s.logger.Infof("Starting funds transer from accId = %s, amount = %f, transactionId = %s",
 		requestDTO.AccountID, requestDTO.Amount, requestDTO.TransactionId.String())
