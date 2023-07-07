@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/LuaSavage/bwg-test-task/service-b/internal/domain/dto"
 	"github.com/LuaSavage/bwg-test-task/service-b/internal/domain/model"
 	"github.com/LuaSavage/bwg-test-task/service-b/pkg/logging"
 	"github.com/google/uuid"
@@ -40,24 +39,24 @@ func (s *Service) GetBalance(ctx context.Context, accountId uuid.UUID) (float64,
 	return acc.Balance, err
 }
 
-func (s *Service) Transfer(ctx context.Context, requestDTO *dto.TransferRequestDTO) error {
-	if requestDTO.Amount <= 0 {
+func (s *Service) Transfer(ctx context.Context, request *TransferRequest) error {
+	if request.Amount <= 0 {
 		return fmt.Errorf("funds amount must be positive")
 	}
 
-	balance, err := s.GetBalance(ctx, requestDTO.AccountID)
+	balance, err := s.GetBalance(ctx, request.AccountID)
 	s.logger.Infof("Starting funds transer from accId = %s, amount = %f, transactionId = %s",
-		requestDTO.AccountID, requestDTO.Amount, requestDTO.TransactionId.String())
+		request.AccountID, request.Amount, request.TransactionId.String())
 
 	if err != nil {
 		return err
 	}
 
-	if balance < requestDTO.Amount {
+	if balance < request.Amount {
 		return fmt.Errorf("not enough money")
 	}
 
-	tx, err := s.storage.Withdraw(ctx, requestDTO.AccountID, requestDTO.Amount)
+	tx, err := s.storage.Withdraw(ctx, request.AccountID, request.Amount)
 	if err != nil {
 		return err
 	}
@@ -66,7 +65,7 @@ func (s *Service) Transfer(ctx context.Context, requestDTO *dto.TransferRequestD
 
 	if rand.Intn(2) == 0 {
 		s.logger.Infof("Transfer transaction has failed accId = %s, amount = %f, transactionId = %s",
-			requestDTO.AccountID, requestDTO.Amount, requestDTO.TransactionId.String())
+			request.AccountID, request.Amount, request.TransactionId.String())
 		err = tx.Rollback(ctx)
 		if err != nil {
 			return fmt.Errorf("transaction error: %s", err.Error())
@@ -75,7 +74,7 @@ func (s *Service) Transfer(ctx context.Context, requestDTO *dto.TransferRequestD
 	}
 
 	s.logger.Infof("Transfer transaction has succeeded accId = %s, amount = %f, transactionId = %s",
-		requestDTO.AccountID, requestDTO.Amount, requestDTO.TransactionId.String())
+		request.AccountID, request.Amount, request.TransactionId.String())
 	err = tx.Commit(ctx)
 	if err != nil {
 		return fmt.Errorf("transaction error: %s", err.Error())

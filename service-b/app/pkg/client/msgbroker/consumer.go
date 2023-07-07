@@ -1,7 +1,9 @@
 package msgbroker
 
 import (
-	"github.com/LuaSavage/bwg-test-task/service-b/pkg/client/msgbroker/dto"
+	"fmt"
+
+	"github.com/LuaSavage/bwg-test-task/service-b/internal/config"
 	"github.com/LuaSavage/bwg-test-task/service-b/pkg/logging"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 )
@@ -11,27 +13,27 @@ type KafkaConsumer struct {
 	Logger   logging.Logger
 }
 
-func NewKafkaConsumer(dto *dto.NewConsumerDTO) (*KafkaConsumer, error) {
+func NewKafkaConsumer(cfg config.KafkaConfig, logger logging.Logger) (*KafkaConsumer, error) {
 	// Kafka consumer configuration
 	consumer, err := kafka.NewConsumer(&kafka.ConfigMap{
-		"bootstrap.servers":  dto.BrokerAdress, // Kafka broker address
-		"group.id":           dto.GroupId,
-		"auto.offset.reset":  dto.AutoOffsetReset,
-		"enable.auto.commit": dto.EnableAutoCommit,
+		"bootstrap.servers":  fmt.Sprintf("%s:%s", cfg.Host, cfg.Port), // Kafka broker address
+		"group.id":           "service_b_consumer_group",
+		"auto.offset.reset":  "earliest",
+		"enable.auto.commit": "false",
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	// Subscribe to the reply topic
-	err = consumer.SubscribeTopics([]string{dto.Topic}, nil)
+	err = consumer.SubscribeTopics([]string{cfg.Topic}, nil)
 	if err != nil {
 		return nil, err
 	}
 
 	return &KafkaConsumer{
 		Consumer: consumer,
-		Logger:   logging.GetLogger(),
+		Logger:   logger,
 	}, nil
 }
 

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
-	tdto "github.com/LuaSavage/bwg-test-task/service-b/internal/domain/dto"
+	accservice "github.com/LuaSavage/bwg-test-task/service-b/internal/domain/service/account"
 	"github.com/LuaSavage/bwg-test-task/service-b/pkg/logging"
 	"github.com/google/uuid"
 )
@@ -15,13 +15,14 @@ type kafkaConsumer interface {
 
 type accountService interface {
 	GetBalance(ctx context.Context, accountId uuid.UUID) (float64, error)
-	Transfer(ctx context.Context, requestDTO *tdto.TransferRequestDTO) error
+	Transfer(ctx context.Context, requestDTO *accservice.TransferRequest) error
 }
 
 type ConsumerService struct {
 	Consumer kafkaConsumer
 	Service  accountService
 	Logger   logging.Logger
+	stopCh   chan struct{}
 }
 
 func NewConsumerService(consumer kafkaConsumer, accountService accountService, logger logging.Logger) (*ConsumerService, error) {
@@ -29,24 +30,34 @@ func NewConsumerService(consumer kafkaConsumer, accountService accountService, l
 		Consumer: consumer,
 		Service:  accountService,
 		Logger:   logger,
+		stopCh:   make(chan struct{}),
 	}, nil
 }
 
 func (c *ConsumerService) Subscribe(ctx context.Context) {
 	for {
-		msg := c.Consumer.ConsumeMessage()
+		select {
+		case <-c.stopCh:
+			return
+		default:
+			msg := c.Consumer.ConsumeMessage()
 
-		var reqDto tdto.TransferRequestDTO
-		err := json.Unmarshal(msg, &reqDto)
+			var reqDto accservice.TransferRequest
+			err := json.Unmarshal(msg, &reqDto)
 
-		if err != nil {
-			c.Logger.Error(err)
-			continue
-		}
+			if err != nil {
+				c.Logger.Error(err)
+				continue
+			}
 
-		err = c.Service.Transfer(ctx, &reqDto)
-		if err != nil {
-			c.Logger.Error(err)
+			err = c.Service.Transfer(ctx, &reqDto)
+			if err != nil {
+				c.Logger.Error(err)
+			}
 		}
 	}
+}
+
+func (c *ConsumerService) Close() {
+	close(c.stopCh)
 }
