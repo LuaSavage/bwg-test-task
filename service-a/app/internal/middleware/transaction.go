@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/LuaSavage/bwg-test-task/service-a/internal/adapter/api/dto"
+	accservice "github.com/LuaSavage/bwg-test-task/service-a/internal/domain/account"
 	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 )
@@ -24,7 +24,7 @@ func NewRequestIdStore() *RequestIdStore {
 	}
 }
 
-func (r *RequestIdStore) Find(reqDTO *dto.TransferRequestDTO) error {
+func (r *RequestIdStore) Find(reqDTO *accservice.TransferRequest) error {
 	r.mtx.Lock()
 	defer r.mtx.Unlock()
 	if storedReqId, ok := r.requestIds[reqDTO.AccountID]; ok {
@@ -36,7 +36,7 @@ func (r *RequestIdStore) Find(reqDTO *dto.TransferRequestDTO) error {
 	return fmt.Errorf("couldn't find pair: %s, %s", reqDTO.AccountID, reqDTO.TransactionId)
 }
 
-func (r *RequestIdStore) Register(reqDTO *dto.TransferRequestDTO) (err error) {
+func (r *RequestIdStore) Register(reqDTO *accservice.TransferRequest) (err error) {
 	err = r.Find(reqDTO)
 	if err != nil {
 		return
@@ -50,7 +50,7 @@ func (r *RequestIdStore) Register(reqDTO *dto.TransferRequestDTO) (err error) {
 
 func FilterTransactionID(ctx echo.Context) error {
 	// Checking request body in general
-	var requestBody dto.TransferRequestDTO
+	var requestBody accservice.TransferRequest
 	err := ctx.Bind(&requestBody)
 	if err != nil {
 		return ctx.JSON(http.StatusBadRequest, "invalid request parameters")
