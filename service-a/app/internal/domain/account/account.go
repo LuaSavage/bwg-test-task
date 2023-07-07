@@ -3,12 +3,11 @@ package account
 import (
 	"context"
 
-	"github.com/LuaSavage/bwg-test-task/service-a/internal/adapter/api/dto"
-	kdto "github.com/LuaSavage/bwg-test-task/service-a/internal/adapter/msgbroker/dto"
+	"github.com/LuaSavage/bwg-test-task/service-a/internal/adapter/msgbroker"
 )
 
 type msgBroker interface {
-	Transfer(ctx context.Context, requestDTO *kdto.KafkaTransferDTO) error
+	Transfer(ctx context.Context, request *msgbroker.KafkaTransferRequest) error
 }
 
 type Service struct {
@@ -21,15 +20,10 @@ func NewService(m msgBroker) *Service {
 	}
 }
 
-func (s *Service) Transfer(ctx context.Context, requestDTO *dto.TransferRequestDTO) error {
-
-	/*
-		some business logic here
-	*/
-
-	return s.msgbroker.Transfer(ctx, &kdto.KafkaTransferDTO{
-		AccountID:     requestDTO.AccountID,
-		TransactionId: requestDTO.TransactionId,
-		Amount:        requestDTO.Amount,
+func (s *Service) Transfer(ctx context.Context, request *TransferRequest) error {
+	return s.msgbroker.Transfer(ctx, &msgbroker.KafkaTransferRequest{
+		AccountID:     request.AccountID,
+		TransactionId: request.TransactionId,
+		Amount:        request.Amount,
 	})
 }

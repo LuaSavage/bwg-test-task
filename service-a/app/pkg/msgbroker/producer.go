@@ -3,7 +3,7 @@ package msgbroker
 import (
 	"fmt"
 
-	"github.com/LuaSavage/bwg-test-task/service-a/pkg/msgbroker/dto"
+	"github.com/LuaSavage/bwg-test-task/service-a/internal/config"
 	"github.com/confluentinc/confluent-kafka-go/kafka"
 	"github.com/labstack/echo/v4"
 )
@@ -14,9 +14,9 @@ type KafkaProducer struct {
 	Logger   echo.Logger
 }
 
-func NewKafkaProducer(dto *dto.NewProducerDTO) (*KafkaProducer, error) {
+func NewKafkaProducer(cfg config.KafkaConfig, logger echo.Logger) (*KafkaProducer, error) {
 	producer, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers": dto.BrokerAdress,
+		"bootstrap.servers": fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
 	})
 	if err != nil {
 		return nil, err
@@ -24,8 +24,8 @@ func NewKafkaProducer(dto *dto.NewProducerDTO) (*KafkaProducer, error) {
 
 	return &KafkaProducer{
 		Producer: producer,
-		Topic:    &dto.Topic,
-		Logger:   dto.Logger,
+		Topic:    &cfg.Topic,
+		Logger:   logger,
 	}, nil
 }
 

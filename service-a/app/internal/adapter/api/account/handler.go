@@ -8,8 +8,7 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 	"golang.org/x/time/rate"
 
-	"github.com/LuaSavage/bwg-test-task/service-a/internal/adapter/api/dto"
-	mware "github.com/LuaSavage/bwg-test-task/service-a/internal/middleware"
+	accservice "github.com/LuaSavage/bwg-test-task/service-a/internal/domain/account"
 )
 
 const (
@@ -17,7 +16,7 @@ const (
 )
 
 type service interface {
-	Transfer(ctx context.Context, requestDTO *dto.TransferRequestDTO) error
+	Transfer(ctx context.Context, request *accservice.TransferRequest) error
 }
 
 type Handler struct {
@@ -39,19 +38,14 @@ func (h *Handler) Register(e *echo.Echo) {
 	// Adding rate limiter to all routes
 	e.Use(middleware.RateLimiter(middleware.NewRateLimiterMemoryStore(h.rateLimit)))
 
-	e.POST(transferHandlerUrl, h.Transfer, func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(ctx echo.Context) error {
-			ctx.Logger().Infof("In %s", transferHandlerUrl)
-			return mware.FilterTransactionID(ctx)
-		}
-	})
+	e.POST(transferHandlerUrl, h.Transfer, FilterTransactionIdMiddleware)
 }
 
 func (h *Handler) Transfer(ctx echo.Context) error {
 	// Doing money transfer
-	var reqDto dto.TransferRequestDTO
-	ctx.Bind(reqDto)
-	err := h.service.Transfer(ctx.Request().Context(), &reqDto)
+	var req accservice.TransferRequest
+	ctx.Bind(req)
+	err := h.service.Transfer(ctx.Request().Context(), &req)
 	if err != nil {
 		return ctx.JSON(http.StatusInternalServerError, "can't provide transfer transaction")
 	}

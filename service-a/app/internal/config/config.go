@@ -13,11 +13,13 @@ type Config struct {
 		Port   string `yaml:"port" env:"PORT" env-default:"8080"`
 		RPC    int    `yaml:"rpc" env:"RATE_LIMIT" env-default:"10"`
 	} `yaml:"listen"`
-	Kafka struct {
-		Host  string `yaml:"host" env:"KAFKA_HOST" env-default:"localhost"`
-		Port  string `yaml:"port" env:"KAFKA_PORT" env-default:"9092"`
-		Topic string `yaml:"topic" env:"KAFKA_TOPIC" env-required:"true" env-default:"transfer"`
-	} `yaml:"kafka"`
+	Kafka KafkaConfig `yaml:"kafka"`
+}
+
+type KafkaConfig struct {
+	Host  string `yaml:"host" env:"KAFKA_HOST" env-default:"localhost"`
+	Port  string `yaml:"port" env:"KAFKA_PORT" env-default:"9092"`
+	Topic string `yaml:"topic" env:"KAFKA_TOPIC" env-required:"true" env-default:"transfer"`
 }
 
 var (
