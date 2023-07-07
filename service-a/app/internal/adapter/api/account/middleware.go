@@ -5,7 +5,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-func FilterTransactionIDMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+func FilterTransactionIdMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(ctx echo.Context) error {
 		ctx.Logger().Infof("In %s", transferHandlerUrl)
 		return mware.FilterTransactionID(ctx)
