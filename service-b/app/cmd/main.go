@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/LuaSavage/bwg-test-task/service-b/internal/config"
-	saccount "github.com/LuaSavage/bwg-test-task/service-b/internal/domain/adapter/storage/account"
+	accstore "github.com/LuaSavage/bwg-test-task/service-b/internal/domain/adapter/storage/account"
 	"github.com/LuaSavage/bwg-test-task/service-b/internal/domain/service/account"
-	"github.com/LuaSavage/bwg-test-task/service-b/pkg/client/msgbroker/dto"
 	"github.com/LuaSavage/bwg-test-task/service-b/pkg/client/postgresql"
 	"github.com/LuaSavage/bwg-test-task/service-b/pkg/logging"
 
@@ -23,21 +24,18 @@ func main() {
 		logger.Fatal(err)
 	}
 
-	ctx := context.TODO()
+	ctx := context.Background()
 	// trying 5 times to establish connection
 	pgxpool, err := postgresql.NewClient(ctx /*max retry attempts*/, 5, cfg.Storage)
+	defer pgxpool.Close()
+	if err != nil {
+		logger.Fatal(err)
+	}
 
-	accountStorage := saccount.NewStorage(pgxpool)
+	accountStorage := accstore.NewStorage(pgxpool)
 	accountService := account.NewService(accountStorage, &logger)
 
-	kafkaConsumer, err := msgbroker.NewKafkaConsumer(&dto.NewConsumerDTO{
-		BrokerAdress:     fmt.Sprintf("%s:%s", cfg.Kafka.Host, cfg.Kafka.Port),
-		GroupId:          "service_b_consumer_group",
-		AutoOffsetReset:  "earliest",
-		EnableAutoCommit: "false",
-		Topic:            cfg.Kafka.Topic,
-		Logger:           logger,
-	})
+	kafkaConsumer, err := msgbroker.NewKafkaConsumer(cfg.Kafka, logger)
 	if err != nil {
 		logger.Fatal(err)
 	}
@@ -48,5 +46,14 @@ func main() {
 	}()
 
 	consumerSerivce, err := consumer.NewConsumerService(kafkaConsumer, accountService, logger)
-	consumerSerivce.Subscribe(ctx)
+	if err != nil {
+		logger.Fatal(err)
+	}
+	go consumerSerivce.Subscribe(ctx)
+
+	osSignal := make(chan os.Signal)
+	signal.Notify(osSignal, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	receivedSignal := <-osSignal
+	logger.Infof("Application exit. Signal: %s (%d)", receivedSignal.String(), receivedSignal)
+	consumerSerivce.Close()
 }
